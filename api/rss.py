@@ -111,7 +111,7 @@ def get_latest():
                 posts.append({
                     "title": title_clean,
                     "link": link,
-                    "episode": episode_number
+                 #   "episode": episode_number
                 })
 
                 if len(posts) >= 10:
