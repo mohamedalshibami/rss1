@@ -12,7 +12,15 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/grid",
+      "dest": "api/rss.py"
+    },
+    {
+      "src": "/extract",
+      "dest": "api/rss.py"
+    },
+    {
+      "src": "/rss",
       "dest": "api/rss.py"
     },
     {
