@@ -7,7 +7,6 @@ import time
 
 print('hi')
 
-
 def real_link(r):
 
   session = requests.Session()  # so connections are recycled
