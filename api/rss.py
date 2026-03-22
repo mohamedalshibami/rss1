@@ -4,9 +4,19 @@ from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import re
+from eceeq import eshq, get_grid6
 
 app = FastAPI()
+
+# ✅ CORS - ضروري عشان الصفحة تقدر تطلب الـ API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 BASE_URL = "https://qeseh.net/"
 RSS_URL = "https://qeseh.net/feed/"
@@ -17,16 +27,9 @@ HEADERS = {
 }
 
 def clean_episode_title(raw_title):
-    # 1. إزالة " - قصة عشق" إذا كانت موجودة في نهاية النص
     clean_title = raw_title.replace(" - قصة عشق", "").strip()
-    
-    # 2. إزالة التكرار من بداية النص (مثل: حلقة37 أو الحلقة 37)
-    # ^(حلقة|الحلقة)\s*\d+ يبحث عن الكلمة والرقم في بداية السطر فقط
     clean_title = re.sub(r'^(حلقة|الحلقة)\s*\d+', '', clean_title).strip()
-    
-    # 3. تنظيف المسافات الزائدة
     clean_title = re.sub(r'\s+', ' ', clean_title)
-    
     return clean_title
 
 @app.get("/")
@@ -38,9 +41,6 @@ def get_latest():
     posts = []
     seen_identifiers = set()
 
-    # ----------------
-    # محاولة السكراب (Scraping)
-    # ----------------
     try:
         scraper = cloudscraper.create_scraper()
         res = scraper.get(BASE_URL, headers=HEADERS, timeout=20)
@@ -50,10 +50,8 @@ def get_latest():
         links = soup.find_all("a", href=True)
 
         for link in links:
-            # بدلاً من get_text() التي تجمع كل الأرقام، نأخذ العنوان من الـ attribute مباشرة
             title_raw = link.get("title", "")
             
-            # إذا لم يوجد title attribute، نحاول سحب النص من الـ div المسمى title
             if not title_raw:
                 title_div = link.find("div", class_="title")
                 if title_div:
@@ -61,14 +59,11 @@ def get_latest():
 
             url = link["href"]
 
-            # التأكد أن الرابط يخص حلقة وليس صفحة عامة
             if not title_raw or ("bolum" not in url and "الحلقة" not in title_raw):
                 continue
 
-            # تنظيف العنوان (حذف التكرار وعبارة قصة عشق)
             title_final = clean_episode_title(title_raw)
 
-            # التحقق من عدم التكرار في القائمة
             if title_final in seen_identifiers:
                 continue
             
@@ -85,9 +80,6 @@ def get_latest():
     except Exception:
         posts = []
 
-    # ----------------
-    # Fallback RSS (في حال فشل السكراب)
-    # ----------------
     if len(posts) == 0:
         try:
             r = requests.get(RSS_URL, headers=HEADERS, timeout=20)
@@ -125,23 +117,16 @@ def get_latest():
         "results": posts
     }
 
-# --- إضافة في بداية الملف بعد الـ imports ---
-from .eceeq import eshq, get_grid6  # استدعاء الدوال من الملف الجديد
-
-# --- إضافة في نهاية الملف ---
-
 @app.get("/grid")
 def api_get_grid():
-    # استدعاء دالة الشبكة من ملف eceeq
     data = get_grid6()
     return {"status": "ok", "results": data}
+
 @app.get("/extract")
 def api_extract_servers(url: str):
     try:
-        # محاولة استدعاء الدالة ومعالجة الرابط
         result = eshq(url)
         
-        # التأكد أن النتيجة ليست فارغة أو تعطلت داخلياً
         if not result or not isinstance(result, list):
             return {
                 "status": "error",
@@ -150,12 +135,11 @@ def api_extract_servers(url: str):
 
         return {
             "status": "ok",
-            "message": result[0],  # النص المنسق
-            "servers": result[1]   # مصفوفة السيرفرات
+            "message": result[0],
+            "servers": result[1]
         }
 
     except Exception as e:
-        # في حال حدوث أي خطأ (مثل IndexError في split أو فشل الاتصال)
         return {
             "status": "error",
             "message": f"حدث خطأ أثناء معالجة الرابط: {str(e)}"
