@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import re
-from .eceeq import eshq, get_grid6
+from .eceeq import eshq, get_grid6 ,get_grid0
 
 app = FastAPI()
 
