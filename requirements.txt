@@ -1,5 +1,8 @@
 fastapi
+uvicorn
 cloudscraper
 beautifulsoup4
 requests
-uvicorn
+requests-html
+lxml
+fake-useragent
