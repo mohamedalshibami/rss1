@@ -122,6 +122,11 @@ def api_get_grid():
     data = get_grid6()
     return {"status": "ok", "results": data}
 
+@app.get("/grid0")
+def api_get_grid():
+    data = get_grid0()
+    return {"status": "ok", "results": data}
+    
 @app.get("/extract")
 def api_extract_servers(url: str):
     try:
