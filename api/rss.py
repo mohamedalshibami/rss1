@@ -17,11 +17,14 @@ HEADERS = {
 }
 
 def clean_episode_title(raw_title):
-    # 1. إزالة التكرار من بداية النص (مثل: حلقة37 أو الحلقة 37)
-    # ^(حلقة|الحلقة)\s*\d+ يبحث عن الكلمة والرقم في بداية السطر فقط
-    clean_title = re.sub(r'^(حلقة|الحلقة)\s*\d+', '', raw_title).strip()
+    # 1. إزالة " - قصة عشق" إذا كانت موجودة في نهاية النص
+    clean_title = raw_title.replace(" - قصة عشق", "").strip()
     
-    # 2. تنظيف المسافات الزائدة
+    # 2. إزالة التكرار من بداية النص (مثل: حلقة37 أو الحلقة 37)
+    # ^(حلقة|الحلقة)\s*\d+ يبحث عن الكلمة والرقم في بداية السطر فقط
+    clean_title = re.sub(r'^(حلقة|الحلقة)\s*\d+', '', clean_title).strip()
+    
+    # 3. تنظيف المسافات الزائدة
     clean_title = re.sub(r'\s+', ' ', clean_title)
     
     return clean_title
@@ -33,7 +36,7 @@ def home():
 @app.get("/rss")
 def get_latest():
     posts = []
-    seen_identifiers = set() # نستخدم معرف فريد (الاسم + الرقم) منعاً للتداخل
+    seen_identifiers = set()
 
     # ----------------
     # محاولة السكراب (Scraping)
@@ -47,17 +50,25 @@ def get_latest():
         links = soup.find_all("a", href=True)
 
         for link in links:
-            title = link.get_text(strip=True)
-            print(link)
+            # بدلاً من get_text() التي تجمع كل الأرقام، نأخذ العنوان من الـ attribute مباشرة
+            title_raw = link.get("title", "")
+            
+            # إذا لم يوجد title attribute، نحاول سحب النص من الـ div المسمى title
+            if not title_raw:
+                title_div = link.find("div", class_="title")
+                if title_div:
+                    title_raw = title_div.get_text(strip=True)
+
             url = link["href"]
 
-            if not title or "episode" not in url and "الحلقة" not in title:
+            # التأكد أن الرابط يخص حلقة وليس صفحة عامة
+            if not title_raw or ("bolum" not in url and "الحلقة" not in title_raw):
                 continue
 
-            # تنظيف العنوان من التكرار البدائي
-            title_final = clean_episode_title(title)
+            # تنظيف العنوان (حذف التكرار وعبارة قصة عشق)
+            title_final = clean_episode_title(title_raw)
 
-            # التحقق من عدم تكرار نفس المسلسل ونفس الحلقة في القائمة
+            # التحقق من عدم التكرار في القائمة
             if title_final in seen_identifiers:
                 continue
             
@@ -84,10 +95,10 @@ def get_latest():
 
             root = ET.fromstring(r.content)
             for item in root.findall(".//item"):
-                title = item.find("title").text
+                title_raw = item.find("title").text
                 link = item.find("link").text
 
-                title_final = clean_episode_title(title)
+                title_final = clean_episode_title(title_raw)
 
                 if title_final in seen_identifiers:
                     continue
