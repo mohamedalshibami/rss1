@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مشغل المسلسلات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a40;
+    --accent: #e63946;
+    --accent2: #f4a261;
+    --text: #f0f0f8;
+    --muted: #8888aa;
+    --green: #2ecc71;
+    --radius: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(ellipse at 20% 20%, #1a0a1a 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, #0a101a 0%, transparent 60%);
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    background: rgba(18,18,26,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent2); }
+
+  /* LAYOUT */
+  .app { max-width: 1200px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  /* PLAYER */
+  #player-section {
+    display: none;
+    margin-bottom: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: slideDown .35s ease;
+  }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:none} }
+  
+  .player-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .back-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 1.1rem; padding: 4px 8px; border-radius: 6px;
+    transition: color .2s, background .2s;
+  }
+  .back-btn:hover { color: var(--text); background: var(--border); }
+  #player-title { font-size: 1rem; font-weight: 700; flex: 1; }
+  
+  #iframe-wrap {
+    position: relative; padding-top: 56.25%;
+    background: #000;
+  }
+  #iframe-wrap iframe {
+    position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+  }
+  #iframe-placeholder {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; color: var(--muted);
+  }
+  #iframe-placeholder .play-icon { font-size: 3rem; }
+
+  /* SERVERS */
+  .servers-bar {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 14px 18px;
+  }
+  .srv-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    font-size: .85rem;
+    font-weight: 600;
+    transition: all .2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .srv-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .srv-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* GRID */
+  .section-title {
+    font-size: 1.15rem; font-weight: 900; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .25s, border-color .25s, box-shadow .25s;
+    position: relative;
+    animation: fadeUp .4s ease both;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 32px rgba(230,57,70,0.18);
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+
+  .card-img {
+    width: 100%; aspect-ratio: 2/3; object-fit: cover;
+    display: block; background: var(--surface);
+  }
+  .card-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.9) 0%, transparent 50%);
+    opacity: 0; transition: opacity .25s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card:hover .card-overlay { opacity: 1; }
+  .play-circle {
+    width: 52px; height: 52px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    box-shadow: 0 4px 20px rgba(230,57,70,0.5);
+    transform: scale(.8); transition: transform .25s;
+  }
+  .card:hover .play-circle { transform: scale(1); }
+
+  .card-body { padding: 10px 12px 12px; }
+  .card-title {
+    font-size: .82rem; font-weight: 700; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* LOADING & ERRORS */
+  .loader {
+    grid-column: 1/-1;
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; padding: 40px; color: var(--muted);
+  }
+  .spinner {
+    width: 22px; height: 22px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .watched-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: var(--green);
+    color: #fff; font-size: .7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+  }
+
+  /* SERVER LOADING */
+  #servers-loader { display:none; padding: 10px 18px; color: var(--muted); font-size:.9rem; }
+
+  @media(max-width:600px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎬 مسلسلات <span>قصة عشق</span></div>
+  <div style="color:var(--muted);font-size:.85rem;">أحدث الحلقات</div>
+</header>
+
+<div class="app">
+
+  <!-- PLAYER SECTION -->
+  <div id="player-section">
+    <div class="player-header">
+      <button class="back-btn" onclick="closePlayer()">✕</button>
+      <div id="player-title">اختر سيرفراً للمشاهدة</div>
+    </div>
+    <div id="iframe-wrap">
+      <div id="iframe-placeholder">
+        <div class="play-icon">▶️</div>
+        <div>اختر سيرفراً من الأسفل لبدء المشاهدة</div>
+      </div>
+    </div>
+    <div id="servers-loader">⏳ جاري جلب روابط المشغلات...</div>
+    <div class="servers-bar" id="servers-bar"></div>
+  </div>
+
+  <!-- GRID SECTION -->
+  <div class="section-title">🔥 أحدث الحلقات</div>
+  <div class="grid" id="grid">
+    <div class="loader"><div class="spinner"></div> جاري التحميل...</div>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = 'https://rss1-three.vercel.app';
+const watched = JSON.parse(localStorage.getItem('watched') || '{}');
+let currentUrl = null;
+let currentBtn = null;
+
+// --- FETCH GRID ---
+async function loadGrid() {
+  try {
+    const res = await fetch(`${API_BASE}/grid`);
+    const data = await res.json();
+    renderGrid(data.results);
+  } catch(e) {
+    document.getElementById('grid').innerHTML = '<div class="loader">❌ فشل تحميل البيانات</div>';
+  }
+}
+
+function renderGrid(items) {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  items.forEach(([title, url, img], i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (i * 0.05) + 's';
+    const isWatched = watched[url];
+    card.innerHTML = `
+      ${isWatched ? '<div class="watched-badge">✔ شاهدته</div>' : ''}
+      <img class="card-img" src="${img}" alt="${title}" loading="lazy" onerror="this.src='https://placehold.co/200x300/1a1a26/666?text=لا+صورة'">
+      <div class="card-overlay"><div class="play-circle">▶</div></div>
+      <div class="card-body">
+        <div class="card-title">${title}</div>
+      </div>
+    `;
+    card.onclick = () => openEpisode(title, url);
+    grid.appendChild(card);
+  });
+}
+
+// --- OPEN EPISODE ---
+async function openEpisode(title, url) {
+  currentUrl = url;
+  document.getElementById('player-title').textContent = title;
+  document.getElementById('player-section').style.display = 'block';
+  document.getElementById('servers-bar').innerHTML = '';
+  document.getElementById('servers-loader').style.display = 'block';
+  resetPlayer();
+
+  // scroll to player
+  document.getElementById('player-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const res = await fetch(`${API_BASE}/extract?url=${encodeURIComponent(url)}`);
+    const data = await res.json();
+    document.getElementById('servers-loader').style.display = 'none';
+    renderServers(data.servers || []);
+    // mark watched
+    watched[url] = true;
+    localStorage.setItem('watched', JSON.stringify(watched));
+    // update card badge
+    document.querySelectorAll('.card').forEach(c => {
+      if(c.getAttribute('data-url') === url && !c.querySelector('.watched-badge')) {
+        const badge = document.createElement('div');
+        badge.className = 'watched-badge'; badge.textContent = '✔ شاهدته';
+        c.prepend(badge);
+      }
+    });
+  } catch(e) {
+    document.getElementById('servers-loader').style.display = 'none';
+    document.getElementById('servers-bar').innerHTML = '<div style="color:#e63946;padding:8px">❌ فشل جلب الروابط</div>';
+  }
+}
+
+function renderServers(servers) {
+  const bar = document.getElementById('servers-bar');
+  bar.innerHTML = '';
+  if(!servers.length) {
+    bar.innerHTML = '<div style="color:var(--muted)">لا توجد سيرفرات متاحة</div>';
+    return;
+  }
+  servers.forEach(([name, link], i) => {
+    const btn = document.createElement('button');
+    btn.className = 'srv-btn';
+    btn.textContent = name;
+    btn.onclick = () => loadServer(link, btn);
+    if(i === 0) setTimeout(() => loadServer(link, btn), 100);
+    bar.appendChild(btn);
+  });
+}
+
+function loadServer(link, btn) {
+  if(currentBtn) currentBtn.classList.remove('active');
+  currentBtn = btn;
+  btn.classList.add('active');
+  const wrap = document.getElementById('iframe-wrap');
+  wrap.innerHTML = `<iframe src="${link}" allowfullscreen allow="autoplay; fullscreen"></iframe>`;
+}
+
+function resetPlayer() {
+  const wrap = document.getElementById('iframe-wrap');
+  wrap.innerHTML = `<div id="iframe-placeholder"><div class="play-icon">▶️</div><div>جاري جلب الروابط...</div></div>`;
+  currentBtn = null;
+}
+
+function closePlayer() {
+  document.getElementById('player-section').style.display = 'none';
+  document.getElementById('iframe-wrap').innerHTML = `<div id="iframe-placeholder"><div class="play-icon">▶️</div><div>اختر سيرفراً من الأسفل لبدء المشاهدة</div></div>`;
+  document.getElementById('servers-bar').innerHTML = '';
+  currentBtn = null;
+}
+
+loadGrid();
+</script>
+</body>
+</html>
