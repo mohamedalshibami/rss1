@@ -81,7 +81,7 @@ def get_grid6():
   return arr
 
 
-def get_grid0():
+def get_x():
   img = ""
   alt = ""
   href = ""
