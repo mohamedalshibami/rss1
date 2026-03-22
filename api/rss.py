@@ -118,7 +118,7 @@ def get_latest():
     }
 
 @app.get("/grid")
-def api_get_grid():
+def api_get_grid0():
     data = get_grid6()
     return {"status": "ok", "results": data}
 
