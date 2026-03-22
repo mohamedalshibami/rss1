@@ -81,7 +81,25 @@ def get_grid6():
   return arr
 
 
-
+def get_grid0():
+  img = ""
+  alt = ""
+  href = ""
+  soup = Get_soup(r_)
+  arr=[]
+  ty = soup.find_all('div', {'class', "containers container-fluid"})
+ # print(ty)
+  y= ty[0].find_all('div',{'id','col-xs-5th col-sm-5th col-md-5th col-lg-5th'})
+  a= ty[0].find_all('a')
+  if len(a) <= len(a):
+    for i in len(a):
+      title =a[i].get('title')
+      href = a[i].get('href')
+      img =a[i].find('div',{'class','imgBg'}).get('style',{'background-image','url'}).split("url(")[-1] 
+      img = img.split(")")[0] 
+      arr.append([title,href ,img])
+  return arr
+  
 
 
 #get_grid(3)
