@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import re
-from .eceeq import eshq, get_grid6 ,get_grid0
+from .eceeq import eshq, get_grid6 ,get_x
 
 app = FastAPI()
 
@@ -122,9 +122,9 @@ def api_get_grid0():
     data = get_grid6()
     return {"status": "ok", "results": data}
 
-@app.get("/grid0")
+@app.get("/x")
 def api_get_grid():
-    data = get_grid0()
+    data = get_x()
     return {"status": "ok", "results": data}
     
 @app.get("/extract")
