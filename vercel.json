@@ -16,6 +16,10 @@
       "dest": "api/rss.py"
     },
     {
+      "src": "/grid0",
+      "dest": "api/rss.py"
+    },
+    {
       "src": "/extract",
       "dest": "api/rss.py"
     },
