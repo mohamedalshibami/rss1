@@ -1,6 +1,5 @@
 import os
 
-import lxml
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import unquote
@@ -20,31 +19,24 @@ def real_link(r):
 
 import cloudscraper
 import random
+# 1. احذف سطر import lxml من هنا
 
 def Get_soup(url):
     print('in get soup')
     
-    # قائمة من رؤوس User-Agent العشوائية
     user_agents = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
-        'Mozilla/5.0 (Linux; Android 10; Pixel 3 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Mobile Safari/537.36',
         'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
     ]
     
-    # إنشاء كائن cloudscraper
     scraper = cloudscraper.create_scraper()
+    headers = {'User-Agent': random.choice(user_agents)}
     
-    # اختيار User-Agent عشوائي
-    headers = {
-        'User-Agent': random.choice(user_agents)
-    }
-    
-    # إرسال الطلب باستخدام cloudscraper مع الرؤوس العشوائية
     page = scraper.get(url, headers=headers)
     src = page.content
-    soup = BeautifulSoup(src, "lxml")
+    
+    # 2. تغيير "lxml" إلى "html.parser"
+    soup = BeautifulSoup(src, "html.parser") 
 
     return soup
 
