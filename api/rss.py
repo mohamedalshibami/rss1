@@ -68,6 +68,7 @@ def get_latest():
                     "title": title_clean,
                     "link": url,
                  #   "episode": episode_number
+                    "episode": " "
                     
                 })
 
