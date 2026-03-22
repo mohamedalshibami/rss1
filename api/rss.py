@@ -48,6 +48,7 @@ def get_latest():
 
         for link in links:
             title = link.get_text(strip=True)
+            print(link)
             url = link["href"]
 
             if not title or "episode" not in url and "الحلقة" not in title:
