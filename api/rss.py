@@ -16,6 +16,16 @@ HEADERS = {
     "Accept-Language": "ar,en;q=0.9"
 }
 
+def clean_episode_title(raw_title):
+    # 1. إزالة التكرار من بداية النص (مثل: حلقة37 أو الحلقة 37)
+    # ^(حلقة|الحلقة)\s*\d+ يبحث عن الكلمة والرقم في بداية السطر فقط
+    clean_title = re.sub(r'^(حلقة|الحلقة)\s*\d+', '', raw_title).strip()
+    
+    # 2. تنظيف المسافات الزائدة
+    clean_title = re.sub(r'\s+', ' ', clean_title)
+    
+    return clean_title
+
 @app.get("/")
 def home():
     return {"status": "running"}
@@ -23,9 +33,10 @@ def home():
 @app.get("/rss")
 def get_latest():
     posts = []
+    seen_identifiers = set() # نستخدم معرف فريد (الاسم + الرقم) منعاً للتداخل
 
     # ----------------
-    # محاولة السكراب
+    # محاولة السكراب (Scraping)
     # ----------------
     try:
         scraper = cloudscraper.create_scraper()
@@ -35,50 +46,35 @@ def get_latest():
         soup = BeautifulSoup(res.text, "html.parser")
         links = soup.find_all("a", href=True)
 
-        seen_episodes = set()
-
         for link in links:
             title = link.get_text(strip=True)
             url = link["href"]
 
-            if not title:
+            if not title or "episode" not in url and "الحلقة" not in title:
                 continue
 
-            # التحقق من أن الرابط مرتبط بحلقة
-            if "episode" in url or "الحلقة" in title:
+            # تنظيف العنوان من التكرار البدائي
+            title_final = clean_episode_title(title)
 
-                # استخراج رقم الحلقة
-                match = re.search(r'الحلقة\s*(\d+)|حلقة\s*(\d+)', title)
-                if match:
-                    episode_number = match.group(1) or match.group(2)
-                else:
-                    continue  # إذا لم نجد رقم الحلقة نتجاهل الرابط
+            # التحقق من عدم تكرار نفس المسلسل ونفس الحلقة في القائمة
+            if title_final in seen_identifiers:
+                continue
+            
+            seen_identifiers.add(title_final)
 
-                # إذا ظهر الرقم مسبقًا، نتخطاه
-                if episode_number in seen_episodes:
-                    continue
-                seen_episodes.add(episode_number)
+            posts.append({
+                "title": title_final,
+                "link": url
+            })
 
-                # تنظيف العنوان لإزالة التكرار
-                title_clean = re.sub(r'(الحلقة\s*\d+)$', '', title).strip()
-                title_clean = re.sub(r'\s+', ' ', title_clean)
-                title_clean = f"{title_clean} الحلقة {episode_number}"
+            if len(posts) >= 10:
+                break
 
-                posts.append({
-                    "title": title_clean,
-                    "link": url,
-                 #   "episode": episode_number
-                    
-                })
-
-                if len(posts) >= 10:
-                    break
-
-    except Exception as e:
+    except Exception:
         posts = []
 
     # ----------------
-    # fallback RSS
+    # Fallback RSS (في حال فشل السكراب)
     # ----------------
     if len(posts) == 0:
         try:
@@ -86,32 +82,20 @@ def get_latest():
             r.raise_for_status()
 
             root = ET.fromstring(r.content)
-            seen_episodes = set()
-
             for item in root.findall(".//item"):
                 title = item.find("title").text
                 link = item.find("link").text
 
-                # استخراج رقم الحلقة
-                match = re.search(r'الحلقة\s*(\d+)|حلقة\s*(\d+)', title)
-                if match:
-                    episode_number = match.group(1) or match.group(2)
-                else:
-                    continue
+                title_final = clean_episode_title(title)
 
-                if episode_number in seen_episodes:
+                if title_final in seen_identifiers:
                     continue
-                seen_episodes.add(episode_number)
-
-                # تنظيف العنوان
-                title_clean = re.sub(r'(الحلقة\s*\d+)$', '', title).strip()
-                title_clean = re.sub(r'\s+', ' ', title_clean)
-                title_clean = f"{title_clean} الحلقة {episode_number}"
+                
+                seen_identifiers.add(title_final)
 
                 posts.append({
-                    "title": title_clean,
-                    "link": link,
-                 #   "episode": episode_number
+                    "title": title_final,
+                    "link": link
                 })
 
                 if len(posts) >= 10:
