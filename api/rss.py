@@ -1,11 +1,19 @@
 import cloudscraper
+import requests
 from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
 BASE_URL = "https://qeseh.net/"
+RSS_URL = "https://qeseh.net/feed/"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+    "Accept-Language": "ar,en;q=0.9"
+}
 
 @app.get("/")
 def home():
@@ -14,39 +22,76 @@ def home():
 @app.get("/rss")
 def get_latest():
 
+    posts = []
+
+    # ----------------
+    # محاولة السكراب
+    # ----------------
     try:
         scraper = cloudscraper.create_scraper()
 
-        res = scraper.get(BASE_URL, timeout=20)
+        res = scraper.get(BASE_URL, headers=HEADERS, timeout=20)
         res.raise_for_status()
 
-    except Exception as e:
-        return JSONResponse({
-            "status": "error",
-            "message": str(e)
-        })
+        soup = BeautifulSoup(res.text, "html.parser")
 
-    soup = BeautifulSoup(res.text, "html.parser")
+        links = soup.find_all("a", href=True)
 
-    posts = []
+        seen = set()
 
-    articles = soup.find_all("article")
+        for link in links:
 
-    for article in articles[:10]:
+            title = link.get_text(strip=True)
+            url = link["href"]
 
-        title_tag = article.find("h2")
-        link_tag = article.find("a", href=True)
+            if not title:
+                continue
 
-        if not title_tag or not link_tag:
-            continue
+            if "episode" in url or "الحلقة" in title:
 
-        title = title_tag.get_text(strip=True)
-        link = link_tag["href"]
+                if url in seen:
+                    continue
 
-        posts.append({
-            "title": title,
-            "link": link
-        })
+                seen.add(url)
+
+                posts.append({
+                    "title": title,
+                    "link": url
+                })
+
+            if len(posts) >= 10:
+                break
+
+    except:
+        posts = []
+
+    # ----------------
+    # fallback RSS
+    # ----------------
+    if len(posts) == 0:
+
+        try:
+            r = requests.get(RSS_URL, headers=HEADERS, timeout=20)
+            r.raise_for_status()
+
+            root = ET.fromstring(r.content)
+
+            for item in root.findall(".//item")[:10]:
+
+                title = item.find("title").text
+                link = item.find("link").text
+
+                posts.append({
+                    "title": title,
+                    "link": link
+                })
+
+        except Exception as e:
+
+            return JSONResponse({
+                "status": "error",
+                "message": str(e)
+            })
 
     return {
         "status": "ok",
