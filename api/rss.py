@@ -124,3 +124,25 @@ def get_latest():
         "count": len(posts),
         "results": posts
     }
+
+# --- إضافة في بداية الملف بعد الـ imports ---
+from .eceeq import eshq, get_grid6  # استدعاء الدوال من الملف الجديد
+
+# --- إضافة في نهاية الملف ---
+
+@app.get("/grid")
+def api_get_grid():
+    # استدعاء دالة الشبكة من ملف eceeq
+    data = get_grid6()
+    return {"status": "ok", "results": data}
+
+@app.get("/extract")
+def api_extract_servers(url: str):
+    # استدعاء دالة السيرفرات من ملف eceeq
+    # ملاحظة: url يجب أن يكون base64 كما تتوقع الدالة
+    result = eshq(url)
+    return {
+        "status": "ok",
+        "message": result[0], # النص المنسق
+        "servers": result[1]  # مصفوفة السيرفرات
+    }
