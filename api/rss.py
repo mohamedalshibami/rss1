@@ -123,9 +123,11 @@ def api_get_grid0():
     return {"status": "ok", "results": data}
 
 @app.get("/x")
-def api_get_grid():
-    data = get_x()
+def api_get_grid(p: int = 1): # سيستقبل p من الرابط ويحولها لرقم تلقائياً
+    # p هنا أصبحت رقماً جاهزاً
+    data = get_x(p) 
     return {"status": "ok", "results": data}
+
     
 @app.get("/extract")
 def api_extract_servers(url: str):
