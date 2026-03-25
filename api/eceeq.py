@@ -82,10 +82,11 @@ def get_grid6():
   return arr
 
 
-def get_x():
+def get_x(page=1):
   img = ""
   alt = ""
   href = ""
+  r_ = f"https://wwv.qeseh.com/page/{page}/"
   soup = Get_soup(r_)
   arr=[]
   ty = soup.find_all('div', {'class', "containers container-fluid"})
@@ -93,7 +94,7 @@ def get_x():
   y= ty[0].find_all('div',{'id','col-xs-5th col-sm-5th col-md-5th col-lg-5th'})
   a= ty[0].find_all('a')
   if 6<= len(a):
-    for i in 15:
+    for i in 30:
       title =a[i].get('title')
       href = a[i].get('href')
       img =a[i].find('div',{'class','imgBg'}).get('style',{'background-image','url'}).split("url(")[-1] 
