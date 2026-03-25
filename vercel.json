@@ -20,6 +20,10 @@
       "dest": "api/rss.py"
     },
     {
+      "src": "/our",
+      "dest": "api/rss.py"
+    },
+    {
       "src": "/extract",
       "dest": "api/rss.py"
     },
