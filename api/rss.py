@@ -24,7 +24,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ----------------- posts -----------------
+# نموذج بيانات المنشور
+class PostCreate(BaseModel):
+    title: str
+    link: str
+    channel_id: Optional[str] = None
+
+# مسار لجلب المنشورات المخزنة في القاعدة
+@app.get("/db/posts")
+async def get_db_posts():
+    rows = db_conn.execute("SELECT id, title, link, status FROM posts ORDER BY id DESC").fetchall()
+    return [{"id": r[0], "title": r[1], "link": r[2], "status": r[3]} for r in rows]
+
+# مسار لإضافة منشور جديد للقاعدة (مثلاً عند سحب بيانات من RSS)
+@app.post("/db/posts/add")
+async def add_db_post(post: PostCreate):
+    try:
+        db_conn.execute(
+            "INSERT INTO posts (title, link, channel_id) VALUES (?, ?, ?)",
+            (post.title, post.link, post.channel_id)
+        )
+        db_conn.commit()
+        return {"status": "success"}
+    except:
+        return {"status": "exists"}
+        
 # ----------------- إعداد قاعدة البيانات -----------------
+
 # يتم إنشاء الاتصال والجداول عند تشغيل السيرفر
 db_conn = sqlite3.connect("data.db", check_same_thread=False)
 cursor = db_conn.cursor()
