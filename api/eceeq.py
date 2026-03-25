@@ -73,7 +73,7 @@ def get_grid6():
   a= ty[0].find_all('a')
   counts  = int(len(a))
   if 6 <= len(a):
-    for i in range(counts):
+    for i in range(30):
       title =a[i].get('title')
       href = a[i].get('href')
       img =a[i].find('div',{'class','imgBg'}).get('style',{'background-image','url'}).split("url(")[-1] 
