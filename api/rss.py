@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import re
 from .eceeq import eshq, get_grid6 ,get_x
-
+our ="https://t.me/+vc-IFic1D55mNmZl"
 app = FastAPI()
 
 # ✅ CORS - ضروري عشان الصفحة تقدر تطلب الـ API
@@ -116,6 +116,12 @@ def get_latest():
         "count": len(posts),
         "results": posts
     }
+
+
+@app.get("/our")
+async def get_our():
+    return {"our": our}
+
 
 @app.get("/grid")
 def api_get_grid0():
